@@ -1,5 +1,7 @@
 """FlaskFarm module for the MTTL-W01 backend."""
 
+from .setup import *  # noqa: F401,F403
+
 name = 'mttl'
 
 
