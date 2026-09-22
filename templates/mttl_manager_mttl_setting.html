@@ -2,14 +2,63 @@
 {% block content %}
 <div class="container-fluid">
   <h3>MTTL-W01 설정</h3>
-  <p class="text-muted">로컬 네트워크의 MTTL 백엔드 주소만 입력하세요. 사용자명, 비밀번호, MQTT 자격증명은 저장하지 않습니다.</p>
-  <form id="setting" method="post" action="/mttl_manager/ajax/setting_save" style="max-width:760px">
+  <p class="text-muted">로컬 백엔드 또는 Nginx Proxy Manager의 HTTPS 주소와 Home Assistant MQTT 연결을 관리합니다.</p>
+  <form id="setting" method="post" action="/mttl_manager/ajax/setting_save" style="max-width:900px">
     <div class="form-group">
       <label for="mttl_backend_url">백엔드 URL</label>
-      <input class="form-control" id="mttl_backend_url" name="mttl_backend_url" value="{{ arg.get('mttl_backend_url', 'http://127.0.0.1:8080') }}" placeholder="http://127.0.0.1:8080">
-      <p class="help-block">localhost 또는 사설 IP 주소만 허용됩니다.</p>
+      <input class="form-control" id="mttl_backend_url" name="mttl_backend_url" value="{{ arg.get('mttl_backend_url', 'http://127.0.0.1:8080') }}" placeholder="https://mttl.example.com">
+      <p class="help-block">사설 IP는 HTTP/HTTPS, NPM 도메인은 유효한 인증서가 있는 HTTPS만 허용됩니다. URL에 하위 경로나 계정정보를 넣지 마세요.</p>
     </div>
-    <button class="btn btn-primary" type="submit">저장</button><span id="save_result" style="margin-left:12px"></span>
+    <div class="form-group">
+      <label for="mttl_public_url">외부 웹 UI URL (선택)</label>
+      <input class="form-control" id="mttl_public_url" name="mttl_public_url" value="{{ arg.get('mttl_public_url', '') }}" placeholder="https://mttl.example.com">
+      <p class="help-block">NPM의 HTTPS 주소입니다. 비워두면 위 백엔드 URL로 웹 UI를 엽니다. FF의 API/암호 통신은 위 내부 주소를 계속 사용합니다.</p>
+    </div>
+    <button class="btn btn-primary" type="submit">백엔드 주소 저장</button><span id="save_result" style="margin-left:12px"></span>
+  </form>
+
+  <hr style="margin:28px 0">
+  <h4>Home Assistant MQTT</h4>
+  <div class="alert alert-info" style="max-width:900px">
+    HA에서 MQTT 전용 사용자를 먼저 만드세요. MTTL 관리자 암호와 MQTT 암호는 FF 데이터베이스에 저장하지 않고 현재 작업 요청에만 사용합니다.
+    기본 관리자 암호 <code>admin</code> 상태에서는 설정 변경을 차단합니다.
+  </div>
+  <form id="ha_setting" autocomplete="off" style="max-width:900px">
+    <div class="form-group">
+      <label for="admin_password">MTTL 관리자 암호</label>
+      <input class="form-control" id="admin_password" type="password" autocomplete="current-password" placeholder="MTTL 웹 UI 관리자 암호">
+    </div>
+    <div class="checkbox"><label><input id="ha_enabled" type="checkbox" checked> HA 연동 사용</label></div>
+    <div class="row">
+      <div class="col-sm-8 form-group"><label for="ha_host">MQTT Broker 주소</label><input class="form-control" id="ha_host" value="192.168.29.178"></div>
+      <div class="col-sm-4 form-group"><label for="ha_port">Port</label><input class="form-control" id="ha_port" type="number" min="1" max="65535" value="1883"></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-6 form-group"><label for="ha_username">MQTT ID</label><input class="form-control" id="ha_username" autocomplete="username"></div>
+      <div class="col-sm-6 form-group"><label for="ha_password">MQTT Password</label><input class="form-control" id="ha_password" type="password" autocomplete="new-password" placeholder="비워두면 저장된 비밀번호 유지"></div>
+    </div>
+    <div class="checkbox"><label><input id="ha_tls" type="checkbox"> TLS</label></div>
+    <details style="margin:12px 0">
+      <summary>고급 MQTT 및 보고 주기</summary>
+      <div class="row" style="margin-top:12px">
+        <div class="col-sm-4 form-group"><label>State topic prefix</label><input class="form-control" id="ha_topic_prefix" value="mttl"></div>
+        <div class="col-sm-4 form-group"><label>HA Discovery prefix</label><input class="form-control" id="ha_discovery_prefix" value="homeassistant"></div>
+        <div class="col-sm-4 form-group"><label>HA Birth topic</label><input class="form-control" id="ha_birth_topic" value="homeassistant/status"></div>
+      </div>
+      <div class="row">
+        <div class="col-sm-3 form-group"><label>Power 최소 변화량</label><select class="form-control" id="ha_power_threshold"><option>0.1</option><option>0.2</option><option>0.3</option><option>0.5</option><option>1</option></select></div>
+        <div class="col-sm-3 form-group"><label>Power 보고 주기</label><select class="form-control" id="ha_power_interval"><option value="15">15초</option><option value="30" selected>30초</option><option value="60">1분</option><option value="120">2분</option><option value="300">5분</option><option value="600">10분</option><option value="1800">30분</option></select></div>
+        <div class="col-sm-3 form-group"><label>Energy 최소 변화량</label><select class="form-control" id="ha_energy_threshold"><option>1</option><option>2</option><option>5</option><option>10</option><option>20</option></select></div>
+        <div class="col-sm-3 form-group"><label>Energy 보고 주기</label><select class="form-control" id="ha_energy_interval"><option value="15">15초</option><option value="30">30초</option><option value="60" selected>1분</option><option value="120">2분</option><option value="300">5분</option><option value="600">10분</option><option value="1800">30분</option></select></div>
+      </div>
+    </details>
+    <div style="margin-top:12px">
+      <button class="btn btn-default ha-action" type="button" data-command="ha_load">설정 불러오기</button>
+      <button class="btn btn-info ha-action" type="button" data-command="ha_test">연결 테스트</button>
+      <button class="btn btn-primary ha-action" type="button" data-command="ha_save">저장 / 연결</button>
+      <button class="btn btn-default ha-action" type="button" data-command="ha_sync">Discovery 동기화</button>
+    </div>
+    <div id="ha_result" style="margin-top:12px"></div>
   </form>
 </div>
 <script>
@@ -24,6 +73,48 @@ $('#setting').on('submit', function(e) {
       result.text('저장 실패: ' + (data.msg || data.error || '오류')).css('color', 'red');
     });
   return false;
+});
+
+function haData(command) {
+  return {
+    command: command,
+    admin_password: $('#admin_password').val(),
+    enabled: $('#ha_enabled').prop('checked') ? '1' : '0',
+    host: $('#ha_host').val(), port: $('#ha_port').val(),
+    username: $('#ha_username').val(), mqtt_password: $('#ha_password').val(),
+    tls: $('#ha_tls').prop('checked') ? '1' : '0',
+    topic_prefix: $('#ha_topic_prefix').val(), discovery_prefix: $('#ha_discovery_prefix').val(),
+    birth_topic: $('#ha_birth_topic').val(), power_threshold_w: $('#ha_power_threshold').val(),
+    power_interval_s: $('#ha_power_interval').val(), energy_threshold_wh: $('#ha_energy_threshold').val(),
+    energy_interval_s: $('#ha_energy_interval').val()
+  };
+}
+
+function applyHA(h) {
+  $('#ha_enabled').prop('checked', !!h.enabled); $('#ha_host').val(h.host || '192.168.29.178');
+  $('#ha_port').val(h.port || 1883); $('#ha_username').val(h.username || ''); $('#ha_tls').prop('checked', !!h.tls);
+  $('#ha_topic_prefix').val(h.topic_prefix || 'mttl'); $('#ha_discovery_prefix').val(h.discovery_prefix || 'homeassistant');
+  $('#ha_birth_topic').val(h.birth_topic || 'homeassistant/status'); $('#ha_power_threshold').val(String(h.power_threshold_w == null ? 0.1 : h.power_threshold_w));
+  $('#ha_power_interval').val(String(h.power_interval_s || 30)); $('#ha_energy_threshold').val(String(h.energy_threshold_wh || 1));
+  $('#ha_energy_interval').val(String(h.energy_interval_s || 60));
+}
+
+$(document).on('click', '.ha-action', function() {
+  var button = $(this), command = button.data('command'), result = $('#ha_result');
+  if (!$('#admin_password').val()) { result.text('MTTL 관리자 암호를 입력하세요.').css('color', 'red'); return; }
+  result.text('처리 중...').css('color', ''); $('.ha-action').prop('disabled', true);
+  $.ajax({url: '/mttl_manager/ajax/mttl/command', type: 'POST', data: haData(command), dataType: 'json'})
+    .done(function(ret) {
+      var h = ret.ha || {}; if (command === 'ha_load' || command === 'ha_save') applyHA(h);
+      $('#ha_password').val('');
+      var state = h.connected ? 'CONNECTED' : (h.enabled ? 'DISCONNECTED' : 'DISABLED');
+      var message = command === 'ha_test' ? 'MQTT 연결 테스트 성공' : command === 'ha_sync' ? 'Discovery 동기화 완료' : '상태: ' + state + (h.password_set ? ' · 비밀번호 저장됨' : ' · 비밀번호 미설정');
+      if (h.must_change_password) message += ' · 기본 관리자 암호를 변경해야 합니다';
+      if (h.last_error) message += ' · ' + h.last_error;
+      result.text(message).css('color', h.connected || command === 'ha_test' || command === 'ha_sync' ? 'green' : '');
+    })
+    .fail(function(xhr) { var data = xhr.responseJSON || {}; $('#ha_password').val(''); result.text(data.error || '작업에 실패했습니다.').css('color', 'red'); })
+    .always(function() { $('.ha-action').prop('disabled', false); });
 });
 </script>
 {% endblock %}

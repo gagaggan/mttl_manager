@@ -1,5 +1,5 @@
 title: "MTTL-W01 관리자"
-version: "0.1.1"
+version: "0.2.0"
 package_name: "mttl_manager"
 developer: "gagaggan"
 description: "MTTL-W01 로컬 백엔드의 상태를 안전하게 확인하고 관리하기 위한 FlaskFarm 플러그인입니다."
