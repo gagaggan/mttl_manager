@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <h3>MTTL-W01 설정</h3>
+  <p class="text-muted">로컬 네트워크의 MTTL 백엔드 주소만 입력하세요. 사용자명, 비밀번호, MQTT 자격증명은 저장하지 않습니다.</p>
+  <form id="setting" method="post" action="/mttl_manager/ajax/setting_save" style="max-width:760px">
+    <div class="form-group">
+      <label for="mttl_backend_url">백엔드 URL</label>
+      <input class="form-control" id="mttl_backend_url" name="mttl_backend_url" value="{{ arg.get('mttl_backend_url', 'http://127.0.0.1:8080') }}" placeholder="http://127.0.0.1:8080">
+      <p class="help-block">localhost 또는 사설 IP 주소만 허용됩니다.</p>
+    </div>
+    <button class="btn btn-primary" type="submit">저장</button><span id="save_result" style="margin-left:12px"></span>
+  </form>
+</div>
+<script>
+$('#setting').on('submit', function(e) {
+  e.preventDefault();
+  var result = $('#save_result');
+  result.text('저장 중...').css('color', '');
+  $.ajax({url: this.action, type: 'POST', data: $(this).serialize(), dataType: 'json'})
+    .done(function() { result.text('저장되었습니다.').css('color', 'green'); })
+    .fail(function(xhr) {
+      var data = xhr.responseJSON || {};
+      result.text('저장 실패: ' + (data.msg || data.error || '오류')).css('color', 'red');
+    });
+  return false;
+});
+</script>
+{% endblock %}

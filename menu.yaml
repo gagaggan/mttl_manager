@@ -1,0 +1,5 @@
+setting:
+  name: MTTL-W01 관리자
+  list:
+    - uri: mttl_manager
+      name: MTTL-W01 관리

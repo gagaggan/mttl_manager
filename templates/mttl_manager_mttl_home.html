@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <h3>MTTL-W01 백엔드</h3>
+  <p class="text-muted">이 화면은 로컬 백엔드 상태만 확인합니다. 프로비저닝, OTA, 펌웨어 생성, 릴레이 제어는 아직 제공하지 않습니다.</p>
+
+  <table class="table table-bordered" style="max-width:900px">
+    <tbody>
+      <tr><th style="width:180px">백엔드 URL</th><td>{{ backend_url }}</td></tr>
+      <tr><th>Health</th><td>{% if health['ok'] %}<span class="text-success">정상</span>{% else %}<span class="text-danger">연결 실패</span>{% endif %}</td></tr>
+      <tr><th>HTTP 상태</th><td>{{ health['status_code'] or '-' }}</td></tr>
+      <tr><th>응답</th><td><pre style="white-space:pre-wrap">{{ health['payload'] | tojson(indent=2) }}</pre></td></tr>
+      {% if health['error'] %}<tr><th>오류</th><td class="text-danger">{{ health['error'] }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+
+  <a class="btn btn-primary" href="{{ backend_url }}" target="_blank" rel="noopener noreferrer">MTTL 웹 UI 열기</a>
+  <a class="btn btn-default" href="/mttl_manager/mttl/home">상태 새로고침</a>
+</div>
+{% endblock %}
